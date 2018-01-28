@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.JSONObject;
@@ -23,12 +24,14 @@ import org.json.JSONObject;
  */
 public class Server {
 
-    static final String VERSION = "2.0";
+    static final String VERSION = "3.0";
 
     public static void main(String[] args) throws IOException {
 
         int port = 8080;
         System.out.println("[starting] ");
+
+        randomSleep();
 
         Thread logVersionthread = new Thread() {
             @Override
@@ -37,14 +40,14 @@ public class Server {
                 while (true) {
                     try {
                         Thread.sleep(1500);
-                        
+
                         JSONObject message = new JSONObject();
                         InetAddress myHost = InetAddress.getLocalHost();
                         message.put("Log_Level", Level.WARNING);
                         message.put("hosname", myHost.getHostName());
                         message.put("version", VERSION);
 
-                        Logger.getLogger(Server.class.getName()).log(Level.WARNING, "W:"+message.toString());
+                        Logger.getLogger(Server.class.getName()).log(Level.WARNING, "W:" + message.toString());
                         Thread.yield();
                     } catch (InterruptedException ex) {
                         Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
@@ -67,7 +70,22 @@ public class Server {
                 null);
         server.start();
         logVersionthread.start();
-        
+
+    }
+
+    private static void randomSleep() {
+        try {
+            int[] intArray = {1, 10, 50};
+
+            int idx = new Random().nextInt(intArray.length);
+            Logger.getLogger(Server.class.getName()).log(Level.WARNING, "W:[version 3.0 tend to have issue to start and reply]" + intArray[idx]);
+            Thread.sleep(intArray[idx] * 1000);
+
+            Thread.yield();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            Thread.currentThread().interrupt();
+        }
     }
 
     static class VersionServerHandler implements HttpHandler {
@@ -116,7 +134,8 @@ public class Server {
             JSONObject message = new JSONObject();
             message.put("status", "ok");
             message.put("version", VERSION);
-
+//
+            randomSleep();
             t.sendResponseHeaders(200, message.toString().length());
             os.write(message.toString().getBytes());
             os.close();
