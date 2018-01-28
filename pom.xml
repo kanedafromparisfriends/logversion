@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.github.kandefromparis</groupId>
+    <artifactId>logversion</artifactId>
+    <version>1.0</version>
+    <packaging>jar</packaging>
+    <dependencies>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20171018</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <configuration>
+                    <archive>
+                        <index>true</index>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                        </manifest>
+                        <manifestEntries>
+                            <mode>development</mode>
+                            <url>${project.url}</url>
+                            <Main-Class>${exec.mainClass}</Main-Class>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer
+                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Main-Class>${exec.mainClass}</Main-Class>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                            <artifactSet/>
+                            <outputFile>${project.build.directory}/${project.artifactId}-${project.version}-fat.jar</outputFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>${docker.maven.plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <machine>
+                        <name>${project.artifactId}</name>
+                        <autoCreate>true</autoCreate>
+                        <createOptions>
+                            <driver>virtualbox</driver>
+                            <virtualbox-cpu-count>2</virtualbox-cpu-count>
+                        </createOptions>
+                    </machine>
+                    <images>
+                        <image>
+                            <alias>service</alias> 
+                            <name>${user.target.dockerrepo}/${project.artifactId}:${project.version}</name>
+                            <build> 
+                                
+                                <from>openjdk:8-jre-alpine3.7</from> 
+                                <assembly>
+                                    <mode>dir</mode>
+                                    <targetDir>/opt/${project.artifactId}</targetDir>
+                                    <name>${user.target.dockerrepo}/${project.artifactId}:${project.version}</name>
+                                    <descriptor>../assembly/docker-assembly.xml</descriptor>
+                                </assembly>
+                                <maintainer></maintainer>
+                                <workdir>/opt/${project.artifactId}</workdir>
+                                <env>
+                                    <JVM_OPTIONS>-Djava.security.egd=file:/dev/./urandom \ 
+                                        -XX:+UnlockExperimentalVMOptions \ 
+                                        -XX:+UseCGroupMemoryLimitForHeap \
+                                        -XX:MaxRAMFraction=2 -XshowSettings:vm
+                                    </JVM_OPTIONS>
+                                </env>
+                                <labels>
+                                    <io-github-kandefromparis-role>tooling</io-github-kandefromparis-role>
+                                    <version>${project.version}</version>
+                                    <artifactId>${project.artifactId}</artifactId>
+                                </labels>
+                                <entryPoint>
+                                    <shell>java $JVM_OPTIONS \
+                                        -jar /opt/${project.artifactId}/${project.artifactId}-${project.version}-fat.jar \
+                                    </shell>                                    
+                                </entryPoint>
+                                
+                            </build>
+                          
+
+                            <run> 
+                                <ports> 
+                                    <port>8080:8080</port>
+                                </ports>
+                                <!-- @todo investiget this issue
+                                <wait> 
+                                    <http>
+                                        <url>http://127.0.0.1:8080/readiness</url>
+                                        <method>GET</method>
+                                        <status>200..399</status>
+                                    </http>
+                                    <healthy>true</healthy>
+                                    <time>100000</time>
+                                </wait>-->
+                            </run>
+                        </image>
+                    </images>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.4.0</version>
+                <executions>
+                    <execution>
+                        <!-- run the application using the fat jar -->
+                        <id>run-app</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-jar</argument>
+                                <argument>${project.build.directory}/${project.artifactId}-${project.version}-fat.jar</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>            
+        </plugins>
+    </build>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target> 
+        <docker.maven.plugin.version>0.23.0</docker.maven.plugin.version>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>1.8</java.version>
+        <exec.mainClass>io.github.kandefromparis.versiondisplay.Server</exec.mainClass>
+        <user.target.dockerrepo>kandefromparis</user.target.dockerrepo>
+    </properties>
+</project>
