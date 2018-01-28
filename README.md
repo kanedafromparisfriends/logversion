@@ -41,11 +41,23 @@ kubectl scale deploy/logversion --replicas=5
 ```
 
 in an other terminal
+```
 kubetail -l run=logversion
+```
+and also
+
+```
+watch -n 1 kubectl get po
+```
+
+Then enjoys with deploy
 
 ```
 kubectl edit deploy/kanedafromparis/logversion
 ```
+
+
+
 
 ### remember
 docker rm $(docker ps -aq) 

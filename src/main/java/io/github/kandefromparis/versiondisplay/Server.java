@@ -24,7 +24,7 @@ import org.json.JSONObject;
  */
 public class Server {
 
-    static final String VERSION = "3.0";
+    static final String VERSION = "3.1";
 
     public static void main(String[] args) throws IOException {
 
@@ -33,33 +33,7 @@ public class Server {
 
         randomSleep();
 
-        Thread logVersionthread = new Thread() {
-            @Override
-            public void run() {
-
-                while (true) {
-                    try {
-                        Thread.sleep(1500);
-
-                        JSONObject message = new JSONObject();
-                        InetAddress myHost = InetAddress.getLocalHost();
-                        message.put("Log_Level", Level.WARNING);
-                        message.put("hosname", myHost.getHostName());
-                        message.put("version", VERSION);
-
-                        Logger.getLogger(Server.class.getName()).log(Level.WARNING, "W:" + message.toString());
-                        Thread.yield();
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-                        Thread.currentThread().interrupt();
-
-                    } catch (UnknownHostException ex) {
-                        Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-
-            }
-        };
+        Logger.getLogger(Server.class.getName()).log(Level.WARNING, "W:[log should be appears with probes ");
 
         HttpServer server
                 = HttpServer.create(new InetSocketAddress(port), 0);
@@ -69,16 +43,15 @@ public class Server {
         server.setExecutor(
                 null);
         server.start();
-        logVersionthread.start();
 
     }
 
     private static void randomSleep() {
         try {
-            int[] intArray = {1, 10, 50};
+            int[] intArray = {1, 10, 500, 5000, 5000, 5000, 10000, 10000};
 
             int idx = new Random().nextInt(intArray.length);
-            Logger.getLogger(Server.class.getName()).log(Level.WARNING, "W:[version 3.0 tend to have issue to start and reply]" + intArray[idx]);
+            Logger.getLogger(Server.class.getName()).log(Level.WARNING, "W:[version 3.0 tend to have issue to start and reply] : " + intArray[idx]);
             Thread.sleep(intArray[idx] * 1000);
 
             Thread.yield();
